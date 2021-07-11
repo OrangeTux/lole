@@ -1,10 +1,15 @@
 use nom::{
     bytes::complete::take,
     combinator::map_res,
+    error::VerboseError,
     number::complete::{le_f32, le_u16, le_u32, le_u64, le_u8},
     IResult,
 };
+
 use std::convert::TryFrom;
+
+mod error;
+use error::{Error, ErrorKind};
 
 /// The F1 2020 API defines 10 different types of packets.
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -123,7 +128,7 @@ pub enum InfringementType {
 }
 
 impl TryFrom<u8> for InfringementType {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -179,13 +184,13 @@ impl TryFrom<u8> for InfringementType {
             49 => Ok(Self::RetryPenalty),
             50 => Ok(Self::IllegalTimeGain),
             51 => Ok(Self::MandatoryPitstop),
-            _ => Err("Invalid value for infringement type."),
+            _ => Err(Error::new(ErrorKind::InvalidInfringementType(value))),
         }
     }
 }
 
 impl TryFrom<u8> for PenaltyType {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -207,13 +212,13 @@ impl TryFrom<u8> for PenaltyType {
             15 => Ok(Self::ThisAndPreviousLapInvalidatedWithoutReason),
             16 => Ok(Self::Retired),
             17 => Ok(Self::BlackFlagTimer),
-            _ => Err("Invalid value for penalty type"),
+            _ => Err(Error::new(ErrorKind::InvalidPenaltyType(value))),
         }
     }
 }
 
 impl TryFrom<u8> for PacketType {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -227,7 +232,7 @@ impl TryFrom<u8> for PacketType {
             7 => Ok(Self::CarStatus),
             8 => Ok(Self::FinalClassification),
             9 => Ok(Self::LobbyInfo),
-            _ => Err("Invalid value"),
+            _ => Err(Error::new(ErrorKind::InvalidPacketType(value))),
         }
     }
 }
@@ -304,7 +309,7 @@ pub enum EventDetails {
 }
 
 /// Parse byte slice as `Header`.
-pub fn header(input: &[u8]) -> IResult<&[u8], Header> {
+pub fn header(input: &[u8]) -> IResult<&[u8], Header, VerboseError<&[u8]>> {
     let (input, packet_format) = le_u16(input)?;
     let (input, game_major_version) = le_u8(input)?;
     let (input, game_minor_version) = le_u8(input)?;
@@ -332,7 +337,7 @@ pub fn header(input: &[u8]) -> IResult<&[u8], Header> {
 }
 
 /// Parse byte slice as `EventBody`.
-pub fn event_body(input: &[u8]) -> IResult<&[u8], EventBody> {
+pub fn event_body(input: &[u8]) -> IResult<&[u8], EventBody, VerboseError<&[u8]>> {
     let (input, code) = map_res(take(4usize), std::str::from_utf8)(input)?;
     let (input, details) = match code {
         "SSTA" => (input, EventDetails::SessionStarted),
