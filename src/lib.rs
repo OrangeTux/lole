@@ -9,6 +9,7 @@ use nom::{
 use std::convert::TryFrom;
 
 mod error;
+pub mod telemetry;
 use error::{Error, ErrorKind};
 
 /// The F1 2020 API defines 10 different types of packets.
