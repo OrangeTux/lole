@@ -1,2 +1,5 @@
 /target
 Cargo.lock
+
+# Ignore Python's virtualenv
+.env/
