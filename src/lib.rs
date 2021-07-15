@@ -10,10 +10,10 @@ use std::convert::TryFrom;
 
 mod error;
 pub mod telemetry;
-use error::{Error, ErrorKind};
+use error::{ErrorKind, ParseError};
 
 /// The F1 2020 API defines 10 different types of packets.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PacketType {
     /// This packet contains physics data for all cars being driven.
     Motion,
@@ -46,7 +46,7 @@ pub enum PacketType {
     LobbyInfo,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum PenaltyType {
     /// Penalty that forces driver to drive through the pit lane without stopping.
     DriveThrough,
@@ -72,7 +72,7 @@ pub enum PenaltyType {
     BlackFlagTimer,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InfringementType {
     BlockingBySlowDriving,
     BlockingByWrongWayDriving,
@@ -129,7 +129,7 @@ pub enum InfringementType {
 }
 
 impl TryFrom<u8> for InfringementType {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -185,13 +185,13 @@ impl TryFrom<u8> for InfringementType {
             49 => Ok(Self::RetryPenalty),
             50 => Ok(Self::IllegalTimeGain),
             51 => Ok(Self::MandatoryPitstop),
-            _ => Err(Error::new(ErrorKind::InvalidInfringementType(value))),
+            _ => Err(ParseError::new(ErrorKind::InvalidInfringementType(value))),
         }
     }
 }
 
 impl TryFrom<u8> for PenaltyType {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -213,13 +213,13 @@ impl TryFrom<u8> for PenaltyType {
             15 => Ok(Self::ThisAndPreviousLapInvalidatedWithoutReason),
             16 => Ok(Self::Retired),
             17 => Ok(Self::BlackFlagTimer),
-            _ => Err(Error::new(ErrorKind::InvalidPenaltyType(value))),
+            _ => Err(ParseError::new(ErrorKind::InvalidPenaltyType(value))),
         }
     }
 }
 
 impl TryFrom<u8> for PacketType {
-    type Error = Error;
+    type Error = ParseError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -233,12 +233,12 @@ impl TryFrom<u8> for PacketType {
             7 => Ok(Self::CarStatus),
             8 => Ok(Self::FinalClassification),
             9 => Ok(Self::LobbyInfo),
-            _ => Err(Error::new(ErrorKind::InvalidPacketType(value))),
+            _ => Err(ParseError::new(ErrorKind::InvalidPacketType(value))),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Header {
     pub packet_format: u16,
     pub game_major_version: u8,
@@ -253,7 +253,7 @@ pub struct Header {
 }
 
 /// Body of a frame.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EventBody {
     /// Code indicating the event type.
     pub code: String,
@@ -263,7 +263,7 @@ pub struct EventBody {
 }
 
 /// `Enum` representing the details of the `EventBody` frame.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EventDetails {
     /// Event generated when the chequered flag is waived.
     ChequeredFlag,
@@ -307,6 +307,35 @@ pub enum EventDetails {
     },
     /// Event generated when team mate enters the pit lane.
     TeamMateInPits { vehicle_id: u8 },
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Data {
+    Event(EventBody),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Frame {
+    pub header: Header,
+    pub body: Data,
+}
+
+pub fn frame(input: &[u8]) -> IResult<&[u8], Frame, VerboseError<&[u8]>> {
+    let (input, header) = header(input)?;
+    let (input, body) = match header.packet_id {
+        PacketType::Event => {
+            let (input, body) = event_body(input)?;
+            (input, Data::Event(body))
+        }
+        _ => {
+            return Err(nom::Err::Error(nom::error::make_error(
+                input,
+                nom::error::ErrorKind::NoneOf,
+            )))
+        }
+    };
+
+    Ok((input, Frame { header, body }))
 }
 
 /// Parse byte slice as `Header`.
