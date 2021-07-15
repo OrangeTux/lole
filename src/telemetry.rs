@@ -4,7 +4,7 @@
 /// use std::thread;
 ///
 /// let socket = UdpSocket::bind("0.0.0.0:20777").unwrap();
-/// let mut app = Lole::telemetry::App::new(socket);
+/// let mut app = lole::telemetry::App::new(socket);
 /// let frames = app.frames();
 ///
 /// thread::spawn(move || {

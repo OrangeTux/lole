@@ -1,9 +1,9 @@
 use std::net::UdpSocket;
 use std::thread;
 
-fn main() -> std::io::Result<()> {
-    let socket = UdpSocket::bind("0.0.0.0:20777")?;
-    let mut app = Lole::telemetry::App::new(socket);
+fn main() {
+    let socket = UdpSocket::bind("0.0.0.0:20777").expect("Failed to bind to '0.0.0.0:20777'");
+    let mut app = lole::telemetry::App::new(socket);
 
     let frames = app.frames();
 
@@ -13,7 +13,5 @@ fn main() -> std::io::Result<()> {
         }
     });
 
-    app.start();
-
-    Ok(())
+    app.start().expect("Lole crashed.");
 }
