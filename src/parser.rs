@@ -1,5 +1,6 @@
 use crate::frame::{
     event::{EventBody, EventDetails, InfringementType, PenaltyType},
+    motion::{CarMotion, MotionBody},
     Data, Frame, Header, PacketType,
 };
 use nom::{
@@ -17,6 +18,10 @@ pub fn frame(input: &[u8]) -> IResult<&[u8], Frame, VerboseError<&[u8]>> {
         PacketType::Event => {
             let (input, body) = event_body(input)?;
             (input, Data::Event(body))
+        }
+        PacketType::Motion => {
+            let (input, body) = motion_body(input)?;
+            (input, Data::Motion(body))
         }
         _ => {
             return Err(nom::Err::Error(nom::error::make_error(
@@ -130,11 +135,73 @@ pub fn event_body(input: &[u8]) -> IResult<&[u8], EventBody, VerboseError<&[u8]>
     ))
 }
 
+pub fn motion_body(input: &[u8]) -> IResult<&[u8], MotionBody, VerboseError<&[u8]>> {
+    let mut car_motions: [CarMotion; 22] = [CarMotion::default(); 22];
+    for n in 0..22 {
+        let (_, motion) = car_motion(input)?;
+        car_motions[n] = motion;
+    }
+
+    Ok((
+        input,
+        MotionBody {
+            car_motion: car_motions,
+        },
+    ))
+}
+
+pub fn car_motion(input: &[u8]) -> IResult<&[u8], CarMotion, VerboseError<&[u8]>> {
+    let (input, world_position_x) = le_f32(input)?;
+    let (input, world_position_y) = le_f32(input)?;
+    let (input, world_position_z) = le_f32(input)?;
+    let (input, world_velocity_x) = le_f32(input)?;
+    let (input, world_velocity_y) = le_f32(input)?;
+    let (input, world_velocity_z) = le_f32(input)?;
+    let (input, world_forward_direction_x) = le_u16(input)?;
+    let (input, world_forward_direction_y) = le_u16(input)?;
+    let (input, world_forward_direction_z) = le_u16(input)?;
+    let (input, world_right_direction_x) = le_u16(input)?;
+    let (input, world_right_direction_y) = le_u16(input)?;
+    let (input, world_right_direction_z) = le_u16(input)?;
+    let (input, g_force_lateral) = le_f32(input)?;
+    let (input, g_force_longitudinal) = le_f32(input)?;
+    let (input, g_force_vertical) = le_f32(input)?;
+    let (input, yaw) = le_f32(input)?;
+    let (input, pitch) = le_f32(input)?;
+    let (input, roll) = le_f32(input)?;
+
+    Ok((
+        input,
+        CarMotion {
+            world_position_x,
+            world_position_y,
+            world_position_z,
+            world_velocity_x,
+            world_velocity_y,
+            world_velocity_z,
+            world_forward_direction_x,
+            world_forward_direction_y,
+            world_forward_direction_z,
+            world_right_direction_x,
+            world_right_direction_y,
+            world_right_direction_z,
+            g_force_lateral,
+            g_force_longitudinal,
+            g_force_vertical,
+            yaw,
+            pitch,
+            roll,
+        },
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::frame::{
-        EventBody, EventDetails, Header, InfringementType, PacketType, PenaltyType,
+        event::{EventBody, EventDetails, InfringementType, PenaltyType},
+        Header, PacketType,
     };
+
     use crate::parser::{event_body, header};
 
     #[test]

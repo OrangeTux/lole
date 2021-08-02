@@ -1,6 +1,8 @@
 pub mod event;
+pub mod motion;
+
 use crate::error::{ErrorKind, ParseError};
-use crate::frame::event::EventBody;
+use crate::frame::{event::EventBody, motion::MotionBody};
 use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -80,4 +82,5 @@ impl TryFrom<u8> for PacketType {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Data {
     Event(EventBody),
+    Motion(MotionBody),
 }

@@ -1,6 +1,6 @@
 use crate::error::AppError;
 ///
-/// ```rust
+/// ```no_run
 /// use std::net::UdpSocket;
 /// use std::thread;
 ///
