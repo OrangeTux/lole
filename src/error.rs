@@ -24,6 +24,12 @@ impl std::fmt::Display for ParseError {
             ErrorKind::InvalidInfringementType(v) => {
                 write!(f, "{:?} is not a valid InfringementType", v)
             }
+            ErrorKind::InvalidTeam(v) => {
+                write!(f, "{:?} is not a valid Team", v)
+            }
+            ErrorKind::InvalidDriver(v) => {
+                write!(f, "{:?} is not a valid Driver", v)
+            }
         }
     }
 }
@@ -33,6 +39,8 @@ pub enum ErrorKind {
     InvalidPenaltyType(u8),
     InvalidPacketType(u8),
     InvalidInfringementType(u8),
+    InvalidTeam(u8),
+    InvalidDriver(u8),
 }
 
 #[derive(Debug)]

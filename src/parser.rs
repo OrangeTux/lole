@@ -1,6 +1,7 @@
 use crate::frame::{
     event::{EventBody, EventDetails, InfringementType, PenaltyType},
     motion::{CarMotion, MotionBody},
+    participants::{Driver, Participant, ParticipantsBody, Team},
     Data, Frame, Header, PacketType,
 };
 use nom::{
@@ -191,6 +192,46 @@ pub fn car_motion(input: &[u8]) -> IResult<&[u8], CarMotion, VerboseError<&[u8]>
             yaw,
             pitch,
             roll,
+        },
+    ))
+}
+
+pub fn participants_body(input: &[u8]) -> IResult<&[u8], ParticipantsBody, VerboseError<&[u8]>> {
+    let mut participants: Vec<Participant> = Vec::with_capacity(22);
+    let (input, number_of_active_cars) = le_u8(input)?;
+    for _ in 0..22 {
+        let (_, motion) = participant(input)?;
+        participants.push(motion);
+    }
+
+    Ok((
+        input,
+        ParticipantsBody {
+            number_of_active_cars,
+            participants,
+        },
+    ))
+}
+
+pub fn participant(input: &[u8]) -> IResult<&[u8], Participant, VerboseError<&[u8]>> {
+    let (input, ai_controlled) = le_u8(input)?;
+    let (input, driver_id) = map_res(le_u8, Driver::try_from)(input)?;
+    let (input, team) = map_res(le_u8, Team::try_from)(input)?;
+    let (input, race_number) = le_u8(input)?;
+    let (input, nationality) = le_u8(input)?;
+    let (input, name) = take(48usize)(input)?;
+    let (input, your_telemetry) = le_u8(input)?;
+
+    Ok((
+        input,
+        Participant {
+            ai_controlled,
+            driver_id,
+            team,
+            race_number,
+            nationality,
+            name: String::from_utf8(name.to_vec()).expect("Failed to parse name as utf-8"),
+            your_telemetry,
         },
     ))
 }
