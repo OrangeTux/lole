@@ -5,17 +5,17 @@ It's named after [Carlos Reutemann], an Argentine racing driver. He's nicknamed 
 
 ## Quick start
 
-First enable the telemetry. Clone the repository, run
+First,  enable the telemetry in the F1 2020 game. Clone the repository, run
 
 ``` bash
-$ cargo run
+$ cargo run --bin plot-race-line
 ```
 
-and start racing!
+and start racing! When done racing, your race line is plotted to /tmp/track.svg.
 
 ## Enabling telemetry 
 
-Enable the telemetry in the F1 2020 game. Open the menu `Game Options > Settings > Telemetry Settings`.
+To enable telemetry in the F1 2020 game, open the menu `Game Options > Settings > Telemetry Settings`.
 Now configure:
 * `UDP Telemetry` as `On`
 * `UDP Broadcast Mode` as `Off`
@@ -59,4 +59,4 @@ This project is licensed under the [MIT license].
 [F1 2020 game]: https://www.codemasters.com/game/f1-2020/
 [f1-2020-telemetry]: https://f1-2020-telemetry.readthedocs.io/en/latest/package-documentation.html
 [MIT license]: LICENSE
-[telemtry UDP API]: https://forums.codemasters.com/topic/50942-f1-2020-udp-specification/
+[telemtry UDP API]: https://forums.codemasters.com/topic/54423-f1%C2%AE-2020-udp-specification/

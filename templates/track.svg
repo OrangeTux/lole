@@ -1,0 +1,26 @@
+{%- set min_x = 9999999 -%}
+{%- set min_y = 9999999 -%}
+{%- set max_x = -9999999 -%}
+{%- set max_y = -9999999 -%}
+{%- set_global points = "" -%}
+
+{%- for coord in coords -%}
+    {%- set_global points = points ~ " " ~  coord.0 ~ "," ~  coord.1 %}
+    {%- if coord.0 < min_x -%} 
+        {% set_global min_x = coord.0 -%}
+    {%- endif -%}
+    {%- if coord.1 < min_y -%} 
+        {% set_global min_y = coord.1 -%}
+    {%- endif -%}
+    {%- if coord.0 > max_x -%} 
+        {% set_global max_x = coord.0 -%}
+    {%- endif -%}
+    {%- if coord.1 > max_y -%} 
+        {% set_global max_y = coord.1 -%}
+    {%- endif -%}
+{%- endfor -%}
+
+<svg viewBox="{{ min_x }} {{ min_y }} {{ max_x - min_x }} {{ max_y - min_y }}" xmlns="http://www.w3.org/2000/svg">
+  <polyline points="{{ points }}"
+            fill="none" stroke="black" />
+</svg>

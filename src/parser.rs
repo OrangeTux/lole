@@ -24,6 +24,10 @@ pub fn frame(input: &[u8]) -> IResult<&[u8], Frame, VerboseError<&[u8]>> {
             let (input, body) = motion_body(input)?;
             (input, Data::Motion(body))
         }
+        PacketType::Participants => {
+            let (input, body) = participants_body(input)?;
+            (input, Data::Participants(body))
+        }
         _ => {
             return Err(nom::Err::Error(nom::error::make_error(
                 input,
@@ -137,10 +141,12 @@ pub fn event_body(input: &[u8]) -> IResult<&[u8], EventBody, VerboseError<&[u8]>
 }
 
 pub fn motion_body(input: &[u8]) -> IResult<&[u8], MotionBody, VerboseError<&[u8]>> {
+    let mut x = input;
     let mut car_motions: [CarMotion; 22] = [CarMotion::default(); 22];
     for n in 0..22 {
-        let (_, motion) = car_motion(input)?;
-        car_motions[n] = motion;
+        let result = car_motion(x)?;
+        x = result.0;
+        car_motions[n] = result.1;
     }
 
     Ok((
@@ -198,9 +204,11 @@ pub fn car_motion(input: &[u8]) -> IResult<&[u8], CarMotion, VerboseError<&[u8]>
 
 pub fn participants_body(input: &[u8]) -> IResult<&[u8], ParticipantsBody, VerboseError<&[u8]>> {
     let mut participants: Vec<Participant> = Vec::with_capacity(22);
-    let (input, number_of_active_cars) = le_u8(input)?;
+    let (mut input, number_of_active_cars) = le_u8(input)?;
     for _ in 0..22 {
-        let (_, motion) = participant(input)?;
+        let result = participant(input)?;
+        input = result.0;
+        let motion = result.1;
         participants.push(motion);
     }
 
